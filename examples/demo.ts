@@ -6,13 +6,13 @@
  * Demonstrates: narrate → hear "Terremoto" → confirm "sí" → /choose
  * A recommendation is spoken but never sent until you confirm.
  */
-import { VoiceSession } from "../src/lib/voxdown/voice/session.ts";
+import { VoiceSession } from "../src/lib/radiodown/voice/session.ts";
 import {
   AFTER_EARTHQUAKE_LOG,
   GARCHOMP_MOVE_REQUEST,
   GARCHOMP_ROTOM_LOG,
   TURN9_REQUEST,
-} from "../src/lib/voxdown/fixtures/garchomp-rotom.ts";
+} from "../src/lib/radiodown/fixtures/garchomp-rotom.ts";
 
 const session = new VoiceSession();
 session.onExecute = (choose) => {

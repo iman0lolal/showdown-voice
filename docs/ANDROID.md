@@ -17,7 +17,7 @@ Foreground Service con tipos:
 - `microphone` (`FOREGROUND_SERVICE_MICROPHONE` + `RECORD_AUDIO`)
 - Conexión persistente del websocket (no uses `dataSync` para una batalla larga en API 35+)
 
-`SpeechRecognizer`, `TextToSpeech`, `MediaSession` para auriculares. El motor TypeScript de `src/lib/voxdown` es el contrato: portarlo a Kotlin o llamarlo vía JS.
+`SpeechRecognizer`, `TextToSpeech`, `MediaSession` para auriculares. El motor TypeScript de `src/lib/radiodown` es el contrato: portarlo a Kotlin o llamarlo vía JS.
 
 ## Confirmación
 

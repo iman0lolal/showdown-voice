@@ -1,4 +1,4 @@
-name: voxdown-core
+name: radiodown-core
 on:
   push:
     branches: [main]

@@ -23,4 +23,4 @@ Ver `sim/SIM-PROTOCOL.md` en smogon/pokemon-showdown.
 - Decisión: `|request|{json}` (privado; los replays públicos no lo incluyen)
 - Respuesta: `/choose move earthquake`, `/choose move earthquake terastallize`, `/choose switch 2`
 
-El motor de Voxdown implementa este contrato. No hay OCR.
+El motor de Radiodown implementa este contrato. No hay OCR.

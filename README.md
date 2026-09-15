@@ -1,6 +1,6 @@
-# Voxdown
+# Radiodown
 
-Cliente de voz para [Pokémon Showdown](https://pokemonshowdown.com). Tú decides cada turno. Voxdown narra el estado, valida la jugada y solo envía `/choose` cuando confirmas.
+Cliente de voz para [Pokémon Showdown](https://pokemonshowdown.com). Tú decides cada turno. Radiodown narra el estado, valida la jugada y solo envía `/choose` cuando confirmas.
 
 No es un bot. No juega ladder solo. No hace clic en la web oficial.
 
@@ -53,7 +53,7 @@ No hay `.env`. El login de Showdown (cabina web) usa usuario/contraseña en memo
 
 ```
 showdown-voice/
-├── src/lib/voxdown/
+├── src/lib/radiodown/
 │   ├── protocol/      # líneas |TYPE|arg  + payloads SockJS
 │   ├── battle/        # HP, |request|, motor de estado
 │   ├── voice/         # alias ES/EN, parser, narrador, sesión

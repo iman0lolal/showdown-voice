@@ -4,7 +4,7 @@
  * Scenario matches the product brief: Garchomp vs Rotom-Wash → Corviknight.
  */
 
-export const GARCHOMP_ROTOM_LOG = `|player|p1|VoxTrainer|1|1500
+export const GARCHOMP_ROTOM_LOG = `|player|p1|RadioTrainer|1|1500
 |player|p2|Rival|2|1480
 |teamsize|p1|6
 |teamsize|p2|6
@@ -61,7 +61,7 @@ export const GARCHOMP_MOVE_REQUEST = {
     },
   ],
   side: {
-    name: "VoxTrainer",
+    name: "RadioTrainer",
     id: "p1",
     pokemon: [
       {

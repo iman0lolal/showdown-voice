@@ -14,7 +14,7 @@ El usuario actual usa iPhone. Conclusión honesta:
 - `UIBackgroundModes = audio` + `AVAudioSession` para TTS y grabación continua
 - Speech framework mientras la sesión de audio está activa
 - Websocket propio mientras el proceso no se suspende (la sesión de audio ayuda)
-- El mismo contrato `voxdown`: narrar, confirmar, `/choose`
+- El mismo contrato `radiodown`: narrar, confirmar, `/choose`
 
 ## PWA en iPhone
 

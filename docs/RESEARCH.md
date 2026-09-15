@@ -42,7 +42,7 @@ PROTOCOL.md lista implementaciones de referencia, no un SDK REST:
 - Cliente Android Kotlin: `MajeurAndroid/Android-Unofficial-Showdown-Client`
 - Bots de chat (Node, Ruby, Lua, Perl)
 
-`@pkmn/protocol` / `@pkmn/client` existen en el ecosistema pkmn. Voxdown no las usa: el parser es pequeño, testeable y en TypeScript plano.
+`@pkmn/protocol` / `@pkmn/client` existen en el ecosistema pkmn. Radiodown no las usa: el parser es pequeño, testeable y en TypeScript plano.
 
 ### Web vs PWA vs app
 

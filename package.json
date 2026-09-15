@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test src/lib/voxdown/**/*.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/radiodown/**/*.test.ts",
     "demo": "node --experimental-strip-types examples/demo.ts"
   }
 }
