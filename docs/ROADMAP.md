@@ -9,15 +9,14 @@ La web actual es harness de desarrollo, no el producto.
 - [x] Fase 2 — protocolo Showdown (websocket helpers, login parse, `/choose`, reconexión, `\|updatesearch\|`)
 - [x] Fase 3 — voice engine (parser ES/EN, narrador, sesión)
 - [x] Fase 4 — action + confirmation (`validateAndChoose`, `requireConfirm` fijo)
-- [x] Fase 5 — **iOS feasibility + architecture** (`docs/IOS.md`, `docs/CHROME.md`)
-- [ ] Fase 6 — iOS MVP (SwiftUI, audio, websocket, START VOICE BATTLE → auto-join)
-- [ ] Fase 7 — prueba real: iPhone + Showdown + AirPods + Voice Battle (pantalla bloqueada)
-- [ ] Fase 8 — Chrome extension, solo si iOS funciona
+- [x] Fase 5 — iOS feasibility (`docs/IOS.md`, `docs/CHROME.md`)
+- [x] Fase 6a — **especificación del MVP iOS** (`docs/IOS-MVP-SPEC.md`). Sin SwiftUI todavía
+- [ ] Fase 6b — `IMPLEMENT IOS MVP` (fuentes Swift, port del core, audio, START)
+- [ ] Fase 7 — prueba real: iPhone + Safari + AirPods + lock + ≥ 10 turnos
+- [ ] Fase 8 — Chrome extension, solo si iOS pasa Fase 7
 
 `requireConfirm = true` no se relaja. Ver `docs/SHOWDOWN-COMPLIANCE.md`.
 
-## Fase 5 — resultado
+Contrato del MVP: [`docs/IOS-MVP-SPEC.md`](IOS-MVP-SPEC.md).
 
-La experiencia soñada es **viable como app nativa que es cliente de Showdown**. No es viable como PWA ni controlando Safari. Auto-join sin escribir Battle ID: misma cuenta con nombre + `|updatesearch|.games`. Detalle y matriz: `docs/IOS.md`.
-
-No se ha escrito código nativo iOS ni la extensión. Eso es Fase 6 / 8.
+No se escribe la app iOS hasta la orden explícita **IMPLEMENT IOS MVP**.

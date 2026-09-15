@@ -4,19 +4,33 @@ Cliente de voz para [Pokémon Showdown](https://pokemonshowdown.com). Tú decide
 
 No es un bot. No juega ladder solo. No hace clic en la web oficial.
 
-**Producto:** app nativa iPhone. **Secundario:** extensión de Chrome. **No:** Android, ni una web como producto. Esta demo web es el harness de desarrollo.
+**Producto:** app nativa iPhone (Voice Battle). **Secundario:** extensión de Chrome. **No:** Android. Esta demo web es el harness de desarrollo, no el producto.
 
 Repositorio: https://github.com/iman0lolal/showdown-voice
 
-[PokeCoachAI](https://github.com/iman0lolal/PokeCoachAI) es **otro** proyecto (Team Preview de Pokémon Champions). Este repo no lo toca.
+[PokeCoachAI](https://github.com/iman0lolal/PokeCoachAI) es **otro** proyecto. Este repo no lo toca.
 
-## Conclusión iOS (Fase 5)
+## Dónde estamos
 
-La experiencia soñada — Showdown en Safari, START VOICE BATTLE, AirPods, pantalla bloqueada, voz bidireccional — **es viable** si Voice Battle es un **cliente nativo del protocolo**. No es viable como PWA ni controlando Safari.
+| Fase | Estado |
+|---|---|
+| Battle Core TypeScript | Listo (oráculo + tests) |
+| Viabilidad iOS | Listo — [`docs/IOS.md`](docs/IOS.md) |
+| **Spec MVP iOS** | Listo — [`docs/IOS-MVP-SPEC.md`](docs/IOS-MVP-SPEC.md) |
+| App Swift | **No.** Esperando `IMPLEMENT IOS MVP` |
+| Chrome extension | Fase 8 — [`docs/CHROME.md`](docs/CHROME.md) |
+| Android | **Cancelado** |
 
-Auto-join sin escribir Battle ID: misma **cuenta con nombre** + `|updatesearch|.games` + `/join`. Un invitado de Safari no se puede detectar.
+La experiencia objetivo:
 
-Matriz honesta: [`docs/IOS.md`](docs/IOS.md). Chrome: [`docs/CHROME.md`](docs/CHROME.md). Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+```
+Showdown en Safari → Voice Battle → START VOICE BATTLE
+→ auto-join → AirPods → bloquear → voz → confirmación → /choose
+```
+
+Contrato técnico de esa prueba (arquitectura, audio, estados, límites, criterio de 10 turnos): **[`docs/IOS-MVP-SPEC.md`](docs/IOS-MVP-SPEC.md)**.
+
+iOS = **port Swift del core**, no JavaScriptCore ni WASM. TypeScript se queda como oráculo y como core de Chrome.
 
 ## Núcleo
 
@@ -34,7 +48,7 @@ Pokémon Showdown
 
 La IA / heurística es opcional y **nunca ejecuta**. `requireConfirm` es invariante.
 
-## Requisitos
+## Requisitos (oráculo)
 
 - Node 22+ (`--experimental-strip-types`)
 - Sin dependencias npm para el núcleo
@@ -46,29 +60,9 @@ npm test
 npm run demo
 ```
 
-No hay `.env`. El login de Showdown usa usuario/contraseña en memoria. No se suben secretos a este repo.
-
-## Estructura
-
-```
-showdown-voice/
-├── src/lib/radiodown/     # Battle Core portable
-├── examples/demo.ts
-├── docs/                  # IOS, CHROME, PROTOCOL, COMPLIANCE, AUDIT
-└── .github/workflows/test.yml
-```
-
-## Tests
-
-```bash
-npm test
-```
-
-Un movimiento ilegal no produce `/choose`. “Terremoto” no se envía hasta “sí”.
+No hay `.env`. El login de Showdown usa usuario/contraseña (en iOS, Keychain). No se suben secretos a este repo.
 
 ## ToS / bots
-
-Showdown permite clientes no oficiales. Un **bot que decide y juega ladder solo** es otra cosa.
 
 | Uso | ¿Aceptable aquí? |
 |---|---|

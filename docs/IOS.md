@@ -2,7 +2,9 @@
 
 Fecha: 2026-09-15. Investigado contra documentación de Apple (AVAudioSession, Speech, SpeechAnalyzer iOS 26, UIBackgroundModes), PROTOCOL.md de Showdown y el código del servidor (`User` / `Connection`).
 
-**No hay código nativo iOS en este repo todavía.** Este documento es el veredicto. No se ocultan límites.
+**Contrato del MVP (Fase 6a):** [`docs/IOS-MVP-SPEC.md`](IOS-MVP-SPEC.md). Ese archivo es la especificación de implementación. Este es el veredicto de viabilidad.
+
+**No hay código nativo iOS en este repo todavía.** No se ocultan límites.
 
 ## Veredicto en una frase
 
@@ -182,13 +184,7 @@ El core TS cabe en ~3–4k líneas. Opciones:
 | JavaScriptCore con el bundle TS | Media | Atajo de 1–2 sprints | Puente STT→JS→TTS | Un core, peor debug, hilos de audio vs JS |
 | WASM | Innecesaria | Peor | Similar a JSC | No aporta en un parser de texto |
 
-**Decisión: no forzar TypeScript en iOS.**
-
-- iOS: SwiftUI + Swift (audio, red, UI) y **port Swift del core** (parser, engine, choose, voice session). Los 47 tests TS se portan 1:1. El repo TS sigue siendo el oráculo y alimenta Chrome / harness.
-- Atajo aceptable si se quiere una primera batalla esta semana: JSC. No es el destino.
-- Chrome extension: TypeScript directo. Cero port.
-
-Prioridad del usuario: fiabilidad > simplicidad > mantenimiento > experiencia de voz > latencia. Eso apunta a Swift nativo, no a WASM.
+**Decisión (cerrada en `docs/IOS-MVP-SPEC.md`): port Swift del core.** TypeScript sigue como oráculo de tests y como core de Chrome. JavaScriptCore y WASM quedan fuera del MVP.
 
 ---
 
@@ -214,4 +210,4 @@ Nada de eso exige OCR, ni controlar Safari, ni relajar `requireConfirm`.
 - Live Activities
 - Extensión de Safari iOS
 
-Siguiente fase de código iOS = Fase 6, cuando el usuario diga que el veredicto vale.
+Siguiente fase de código iOS = **IMPLEMENT IOS MVP**, con el contrato de [`docs/IOS-MVP-SPEC.md`](IOS-MVP-SPEC.md). Hasta esa orden no hay SwiftUI en el repo.

@@ -57,13 +57,33 @@ describe("VoiceSession confirmation loop", () => {
     assert.equal(sent.length, 1);
   });
 
-  it("answers opponent query without executing", () => {
+  it("Safari already submitted: |error| does not lock the session on the same rqid", () => {
     const session = primed();
     const sent: string[] = [];
     session.onExecute = (c) => sent.push(c);
-    const reply = session.hear("¿Qué tiene el rival?");
-    assert.equal(sent.length, 0);
-    assert.match(reply.speak, /Rotom/i);
-    assert.match(reply.speak, /Hydro Pump|Will-O-Wisp|Volt Switch/i);
+    session.hear("Terremoto");
+    session.hear("sí");
+    assert.equal(sent.length, 1);
+    assert.equal(session.phase, "waiting_result");
+    session.ingest("|error|[Invalid choice] Can't do anything: Your decision has already been made");
+    session.ingest(`|request|${JSON.stringify(GARCHOMP_MOVE_REQUEST)}`);
+    assert.equal(session.phase, "awaiting_command");
+    assert.equal(session.lastSentRqid, undefined);
+    session.hear("Protect");
+    session.hear("sí");
+    assert.equal(sent[1], "/choose move protect|8");
+  });
+
+  it("rejected choose plus a fresh |request| in the same payload is playable", () => {
+    const session = primed();
+    session.onExecute = () => undefined;
+    session.hear("Terremoto");
+    session.hear("sí");
+    const reply = session.ingest(
+      `|error|[Invalid choice] Can't do anything: Your decision has already been made\n|request|${JSON.stringify(GARCHOMP_MOVE_REQUEST)}`,
+    );
+    assert.equal(session.phase, "awaiting_command");
+    assert.ok(reply?.speak);
+    assert.match(reply!.speak, /sincronizo|already submitted|otro cliente/i);
   });
 });

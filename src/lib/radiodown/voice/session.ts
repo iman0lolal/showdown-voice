@@ -67,12 +67,25 @@ export class VoiceSession {
 
   ingest(payload: string): SessionReply | null {
     const chunks = parseProtocolPayload(payload);
-    for (const chunk of chunks) this.engine.feed(chunk.events, chunk.roomId);
+    const errors: string[] = [];
+    for (const chunk of chunks) {
+      this.engine.feed(chunk.events, chunk.roomId);
+      for (const ev of chunk.events) {
+        if (ev.type === "error") {
+          const fromKw = Object.entries(ev.kwArgs)
+            .map(([key, value]) => (value === "true" ? `[${key}]` : `[${key}] ${value}`))
+            .join(" ");
+          const msg = [ev.args.join(" "), fromKw].filter((s) => s.trim()).join(" ").trim() || ev.raw;
+          errors.push(msg);
+        }
+      }
+    }
     if (this.state.ended) {
       this.phase = "ended";
       this.pending = undefined;
       return this.speakNow(narrateSituation(this.state, this.config.lang));
     }
+    if (errors.length) return this.onServerError(errors[errors.length - 1]!);
     if (this.state.request && this.state.request.kind !== "wait") {
       if (this.state.request.rqid != null && this.state.request.rqid === this.lastSentRqid) {
         this.phase = "waiting_result";
@@ -220,6 +233,42 @@ export class VoiceSession {
       error: this.error,
       lastSentRqid: this.lastSentRqid,
     };
+  }
+
+  /**
+   * Safari (or any other Connection of the same User) may submit first.
+   * Showdown then rejects our /choose with |error|. Never treat that as
+   * "our action landed". Clear the sent rqid so a live |request| is playable.
+   */
+  private onServerError(message: string): SessionReply {
+    this.lastSentChoose = undefined;
+    this.lastSentRqid = undefined;
+    this.pending = undefined;
+    this.error = message;
+    const already = /already (been )?made|Can't do anything|ya (se )?ha (tomado|hecho)/i.test(message);
+    if (this.state.request && this.state.request.kind !== "wait") {
+      this.phase = "awaiting_command";
+      this.recommendation = recommend(this.state, this.config.lang) ?? undefined;
+      const head =
+        this.config.lang === "en"
+          ? already
+            ? "The other client already submitted a move. Synced with the server."
+            : `Showdown rejected that. ${message}.`
+          : already
+            ? "El otro cliente ya envió la acción. Me sincronizo con el servidor."
+            : `Showdown rechazó la acción. ${message}.`;
+      return this.speakNow(`${head} ${narrateSituation(this.state, this.config.lang)}`);
+    }
+    this.phase = "waiting_result";
+    const speak =
+      this.config.lang === "en"
+        ? already
+          ? "Action already submitted. Waiting for the turn to resolve."
+          : `Showdown rejected that. Waiting for the server.`
+        : already
+          ? "La acción ya estaba enviada. Esperando la resolución del turno."
+          : "Showdown rechazó la acción. Esperando al servidor.";
+    return this.speakNow(speak);
   }
 
   private propose(action: BattleAction, source: "user" | "recommendation"): SessionReply {
