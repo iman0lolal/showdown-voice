@@ -49,6 +49,7 @@ describe("parseVoiceCommand", () => {
     assert.equal(parseVoiceCommand("sí", ctx).kind, "confirm");
     assert.equal(parseVoiceCommand("hazlo", ctx).kind, "confirm");
     assert.equal(parseVoiceCommand("cancelar", ctx).kind, "deny");
+    assert.equal(parseVoiceCommand("no, espera", ctx).kind, "deny");
     assert.equal(parseVoiceCommand("Haz la recomendación", ctx).kind, "accept_recommendation");
   });
 

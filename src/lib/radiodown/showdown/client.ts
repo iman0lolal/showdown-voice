@@ -1,21 +1,29 @@
 /**
- * Pokémon Showdown websocket client.
- *
- * Confirmed endpoints (PROTOCOL.md, smogon/pokemon-showdown):
- *   wss://sim3.psim.us/showdown/websocket
- *   ws://sim3.psim.us:8000/showdown/websocket
- *
- * There is NO REST API for live battle state. The websocket *is* the API.
- * Login: |challstr| → POST play.pokemonshowdown.com/api/login → /trn USER,0,ASSERTION
- *
- * Client → server: ROOMID|TEXT
- * Battle decisions: ROOMID|/choose CHOICE
+ * Pokémon Showdown protocol helpers. No DOM, no WebSocket constructor.
+ * The transport lives in the app shell (web / Android / iOS).
  */
 
-export const SHOWDOWN_WS = "wss://sim3.psim.us/showdown/websocket";
-export const SHOWDOWN_LOGIN = "https://play.pokemonshowdown.com/api/login";
-export const SHOWDOWN_UPKEEP = "https://play.pokemonshowdown.com/api/upkeep";
-export const SHOWDOWN_ASSERTION = "https://play.pokemonshowdown.com/api/getassertion";
+export {
+  DEFAULT_SERVER,
+  websocketUrl,
+  parseDefaultServerFromConfigJs,
+  isTransportFrame,
+  joinBattleCommand,
+  reconnectCommands,
+  KEEPALIVE_CMD,
+  KEEPALIVE_MS,
+  LOGIN_API,
+  UPKEEP_API,
+  GETASSERTION_API,
+  CLIENT_CONFIG_URL,
+} from "./server.ts";
+export type { SimServer } from "./server.ts";
+import { LOGIN_API, UPKEEP_API, GETASSERTION_API, websocketUrl } from "./server.ts";
+
+export const SHOWDOWN_WS = websocketUrl();
+export const SHOWDOWN_LOGIN = LOGIN_API;
+export const SHOWDOWN_UPKEEP = UPKEEP_API;
+export const SHOWDOWN_ASSERTION = GETASSERTION_API;
 
 export interface ShowdownLoginResult {
   username: string;
@@ -33,12 +41,19 @@ export function chooseMessage(roomId: string, chooseCmd: string): string {
 }
 
 export function parseChallstr(line: string): string | null {
-  if (!line.startsWith("|challstr|")) return null;
-  return line.slice("|challstr|".length);
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("|challstr|")) return null;
+  return trimmed.slice("|challstr|".length);
 }
 
 export function trnCommand(username: string, assertion: string): string {
   return `|trn ${username},0,${assertion}`;
+}
+
+export function parseUpdateuser(line: string): { username: string; named: boolean } | null {
+  if (!line.startsWith("|updateuser|")) return null;
+  const parts = line.split("|");
+  return { username: parts[2] ?? "", named: parts[3] === "1" };
 }
 
 export function parseLoginResponse(body: string): ShowdownLoginResult | { error: string } {

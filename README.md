@@ -17,7 +17,7 @@ Esto es viable **como cliente del protocolo público de Showdown**, no como auto
 - Un iPhone **no** puede controlar la PWA oficial con la pantalla bloqueada.
 - Android sí puede mantener micrófono + websocket en un Foreground Service nativo. Eso es Fase 5, no este núcleo TypeScript.
 
-Detalles: [`docs/RESEARCH.md`](docs/RESEARCH.md), [`docs/PROTOCOL.md`](docs/PROTOCOL.md), [`docs/ANDROID.md`](docs/ANDROID.md), [`docs/IOS.md`](docs/IOS.md), [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Detalles: [`docs/RESEARCH.md`](docs/RESEARCH.md), [`docs/PROTOCOL.md`](docs/PROTOCOL.md), [`docs/SHOWDOWN-COMPLIANCE.md`](docs/SHOWDOWN-COMPLIANCE.md), [`docs/AUDIT.md`](docs/AUDIT.md), [`docs/ANDROID.md`](docs/ANDROID.md), [`docs/IOS.md`](docs/IOS.md).
 
 ## Núcleo
 
@@ -54,15 +54,17 @@ No hay `.env`. El login de Showdown (cabina web) usa usuario/contraseña en memo
 ```
 showdown-voice/
 ├── src/lib/radiodown/
-│   ├── protocol/      # líneas |TYPE|arg  + payloads SockJS
-│   ├── battle/        # HP, |request|, motor de estado
-│   ├── voice/         # alias ES/EN, parser, narrador, sesión
-│   ├── action/        # valida y construye /choose
-│   ├── recommend/     # type chart + heurística (no ejecuta)
-│   ├── showdown/      # websocket + login helpers
-│   └── fixtures/      # replay gen9ou-2681491500 + Garchomp vs Rotom
-├── examples/demo.ts   # bucle de voz offline
-├── docs/
+│   ├── CORE.md
+│   ├── lifecycle.ts   # canSendChoose / fases
+│   ├── protocol/
+│   ├── battle/
+│   ├── voice/
+│   ├── action/        # /choose + targets (singles + doubles encoding)
+│   ├── recommend/     # data only, nunca /choose
+│   ├── showdown/      # discovery, keepalive, reconnect helpers
+│   └── fixtures/
+├── examples/demo.ts
+├── docs/              # PROTOCOL, COMPLIANCE, AUDIT, ANDROID, IOS
 ├── .github/workflows/test.yml
 └── package.json
 ```
@@ -73,7 +75,7 @@ showdown-voice/
 npm test
 ```
 
-27 tests. Un movimiento ilegal no produce `/choose`. “Terremoto” no se envía hasta “sí”.
+47 tests. Un movimiento ilegal no produce `/choose`. “Terremoto” no se envía hasta “sí”.
 
 ## ToS / bots
 

@@ -166,3 +166,20 @@ export const TURN9_REQUEST = {
     ),
   },
 };
+
+export const FORCE_SWITCH_REQUEST = {
+  forceSwitch: [true],
+  side: GARCHOMP_MOVE_REQUEST.side,
+  rqid: 10,
+};
+
+export const NO_TERA_REQUEST = {
+  ...GARCHOMP_MOVE_REQUEST,
+  rqid: 11,
+  active: [
+    {
+      moves: GARCHOMP_MOVE_REQUEST.active[0].moves,
+    },
+  ],
+};
+

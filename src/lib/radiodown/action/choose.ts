@@ -1,23 +1,27 @@
 import { toId } from "../ids.ts";
-import type { BattleAction, ChoiceRequest, ValidationResult } from "../types.ts";
+import type { BattleAction, ChoiceRequest, ValidationContext, ValidationResult } from "../types.ts";
 import { aliasSpecies, bestMatch } from "../voice/aliases.ts";
+import { encodeTargetSpec, targetIsChosen, type ActionTarget } from "./targets.ts";
 
 /**
  * Validate a structured action against the current |request| and
  * produce a Showdown `/choose` command.
  *
- * Choice syntax (SIM-PROTOCOL.md):
- *   move MOVESPEC
- *   move MOVESPEC mega | zmove | max | terastallize
- *   switch SWITCHSPEC
- *   team TEAMSPEC
- *   pass | default | undo
- *
- * Client sends: `/choose CHOICE` optionally `|rqid`.
+ * |request| is the only source of truth for legal choices.
  */
-export function validateAndChoose(action: BattleAction, request: ChoiceRequest | null): ValidationResult {
+export function validateAndChoose(
+  action: BattleAction,
+  request: ChoiceRequest | null,
+  ctx: ValidationContext = {},
+): ValidationResult {
+  if (ctx.ended) {
+    return { ok: false, reason: "La batalla ya terminó." };
+  }
   if (!request || request.kind === "wait") {
     return { ok: false, reason: "No hay una decisión pendiente en Showdown." };
+  }
+  if (ctx.lastSentRqid != null && request.rqid != null && ctx.lastSentRqid === request.rqid) {
+    return { ok: false, reason: "Esa petición ya se envió." };
   }
   if (action.type === "undo") {
     return { ok: true, action, choose: withRqid("undo", request) };
@@ -36,7 +40,7 @@ export function validateAndChoose(action: BattleAction, request: ChoiceRequest |
     return validateSwitch(action, request);
   }
   if (action.type === "move") {
-    return validateMove(action, request);
+    return validateMove(action, request, ctx);
   }
   return { ok: false, reason: "Acción no reconocida." };
 }
@@ -79,6 +83,13 @@ function validateSwitch(
     })();
 
   if (!match) {
+    const fainted = pokemon.find((p) => {
+      const name = (p.ident.split(":").pop() ?? "").trim();
+      return toId(name) === toId(wanted) && p.condition.includes("fnt");
+    });
+    if (fainted) {
+      return { ok: false, reason: `${action.pokemon} está debilitado.` };
+    }
     return {
       ok: false,
       reason: `${action.pokemon} no está disponible para el cambio.`,
@@ -93,6 +104,7 @@ function validateSwitch(
 function validateMove(
   action: Extract<BattleAction, { type: "move" }>,
   request: ChoiceRequest,
+  ctx: ValidationContext,
 ): ValidationResult {
   if (request.kind === "switch") {
     return { ok: false, reason: "Tienes que cambiar, no atacar." };
@@ -100,8 +112,9 @@ function validateMove(
   if (request.kind !== "move") {
     return { ok: false, reason: "Ahora no puedes usar un movimiento." };
   }
-  const active = request.active?.[0];
-  if (!active) return { ok: false, reason: "No hay Pokémon activo en la petición." };
+  const activeIndex = action.activeSlot ?? 0;
+  const active = request.active?.[activeIndex];
+  if (!active) return { ok: false, reason: "No hay Pokémon activo en esa posición." };
 
   const moves = active.moves;
   const wanted = toId(action.moveId || action.move);
@@ -144,13 +157,27 @@ function validateMove(
     extras.push("max");
   }
 
-  const spec = extras.length ? `move ${resolved.id} ${extras.join(" ")}` : `move ${resolved.id}`;
+  const gameType = ctx.gameType ?? "singles";
+  let target: ActionTarget | undefined = action.target;
+  if (gameType === "singles") {
+    target = { kind: "none" };
+  } else if (targetIsChosen(resolved.target) && (!target || target.kind === "none")) {
+    return {
+      ok: false,
+      needsClarification: "¿A qué Pokémon apunta el movimiento?",
+      action: { ...action, move: resolved.move, moveId: resolved.id },
+    };
+  }
+
+  const targetSpec = gameType === "singles" ? "" : encodeTargetSpec(target);
+  const parts = [`move ${resolved.id}`, targetSpec, ...extras].filter(Boolean);
   const filled: BattleAction = {
     ...action,
     move: resolved.move,
     moveId: resolved.id,
+    target: target ?? { kind: "none" },
   };
-  return { ok: true, action: filled, choose: withRqid(spec, request) };
+  return { ok: true, action: filled, choose: withRqid(parts.join(" "), request) };
 }
 
 function withRqid(choice: string, request: ChoiceRequest): string {

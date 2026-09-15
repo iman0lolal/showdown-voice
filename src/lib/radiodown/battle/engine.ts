@@ -205,6 +205,12 @@ export class BattleEngine {
       case "-fail":
         this.note("El movimiento falla.");
         break;
+      case "-activate":
+        this.note(`${this.displayName(event.args[0])} activa ${event.args[1] ?? "un efecto"}.`);
+        break;
+      case "error":
+        this.note(event.args.join(" "));
+        break;
       case "cant":
         this.note(`${this.displayName(event.args[0])} no puede moverse (${event.args[1] ?? "impedido"}).`);
         break;
@@ -309,6 +315,7 @@ export class BattleEngine {
     if (details.teraType) {
       poke.teraType = details.teraType;
       poke.terastallized = true;
+      poke.teraTypeKnown = true;
     }
     poke.hp = hp.hp;
     poke.status = hp.status === "fnt" ? undefined : hp.status;
@@ -329,6 +336,7 @@ export class BattleEngine {
     if (details.teraType) {
       poke.teraType = details.teraType;
       poke.terastallized = true;
+      poke.teraTypeKnown = true;
     }
     if (event.args[2]) {
       const hp = parseHpStatus(event.args[2]);
@@ -344,7 +352,7 @@ export class BattleEngine {
     if (poke) {
       const id = toId(moveName);
       if (id && !poke.moves.some((m) => m.id === id)) {
-        poke.moves.push({ id, name: moveName });
+        poke.moves.push({ id, name: moveName, revealed: true });
       }
     }
     const miss = event.kwArgs.miss ? " (falla)" : "";
@@ -484,6 +492,7 @@ export class BattleEngine {
     if (!poke) return;
     poke.terastallized = true;
     poke.teraType = event.args[1] || poke.teraType;
+    poke.teraTypeKnown = true;
     this.note(`${this.displayName(event.args[0])} teracristaliza en ${poke.teraType}.`);
   }
 
@@ -533,12 +542,16 @@ export class BattleEngine {
       poke.itemKnown = rp.item !== undefined;
       poke.ability = rp.ability ?? rp.baseAbility ?? poke.ability;
       poke.abilityKnown = Boolean(rp.ability ?? rp.baseAbility);
-      if (rp.teraType) poke.teraType = rp.teraType;
+      if (rp.teraType) {
+        poke.teraType = rp.teraType;
+        poke.teraTypeKnown = true;
+      }
       poke.terastallized = Boolean(rp.terastallized);
       if (rp.moves?.length) {
         poke.moves = rp.moves.map((m) => ({
           id: toId(m),
           name: m,
+          revealed: true,
         }));
       }
     }
@@ -563,6 +576,7 @@ export class BattleEngine {
       gender: init.gender,
       shiny: Boolean(init.shiny),
       terastallized: false,
+      teraTypeKnown: false,
       hp: { current: 100, max: 100, percent: 100 },
       item: init.item,
       itemKnown: Boolean(init.itemKnown),

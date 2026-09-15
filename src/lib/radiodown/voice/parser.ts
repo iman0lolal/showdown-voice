@@ -1,9 +1,11 @@
 import { toId } from "../ids.ts";
 import type { BattleAction, BattleState, ChoiceRequest, VoiceIntent } from "../types.ts";
 import { aliasMove, aliasSpecies, bestMatch } from "./aliases.ts";
+import { parseSpokenTarget } from "../action/targets.ts";
 
-const CONFIRM = /^(sí|si|yes|ok|okay|vale|hazlo|ejecuta|confirma|confirm|dale|afirmativo|do it|go)$/i;
-const DENY = /^(no|nop|nel|cancel[ae]?|cancela|cancelar|atrás|atras|back|stop|para)$/i;
+const CONFIRM = /^(sí|si|yes|ok|okay|vale|hazlo|ejecuta|confirma|confirm|dale|afirmativo|do it)$/i;
+const DENY =
+  /^(no|nop|nel|no,\s*espera|no espera|espera|wait|alto|cancel[ae]?|cancela|cancelar|atrás|atras|back|stop|para)(?:[.,!\s].*)?$/i;
 const REPEAT = /^(repite|repetir|otra vez|de nuevo|repeat|again|qué\??|que\??)$/i;
 const ACCEPT_REC = /^(haz la recomendaci[oó]n|recomendaci[oó]n|la recomendaci[oó]n|hazlo t[uú]|sigue tu consejo|go with the rec(ommendation)?)$/i;
 
@@ -21,6 +23,7 @@ const TERA = /\b(tera|teracristal(?:iza(?:r)?)?|terastal(?:lize)?)\b/i;
 const MEGA = /\b(mega|megaevo(?:luci[oó]n)?)\b/i;
 const DMAX = /\b(dynamax|dmax|gigantamax|gmax)\b/i;
 const ZMOVE = /\b(z\s*-?\s*move|movimiento z)\b/i;
+const HEDGE = /\b(creo que|a lo mejor|quiz[aá]s|tal vez|maybe|i think(?: that)?|probably|igual)\b/gi;
 
 export interface ParseContext {
   state: BattleState;
@@ -44,11 +47,16 @@ export function parseVoiceCommand(utterance: string, ctx: ParseContext): VoiceIn
   if (QUERY_TEAM.test(raw)) return { kind: "query", topic: "team" };
   if (QUERY_SIT.test(raw)) return { kind: "query", topic: "situation" };
 
+  const tentative = HEDGE.test(raw);
+  HEDGE.lastIndex = 0;
+
   const terastallize = TERA.test(raw);
   const mega = MEGA.test(raw);
   const dynamax = DMAX.test(raw);
   const zmove = ZMOVE.test(raw);
+  const spokenTarget = parseSpokenTarget(raw);
   const cleaned = raw
+    .replace(HEDGE, " ")
     .replace(TERA, " ")
     .replace(MEGA, " ")
     .replace(DMAX, " ")
@@ -61,17 +69,18 @@ export function parseVoiceCommand(utterance: string, ctx: ParseContext): VoiceIn
   if (switchMatch) {
     const name = switchMatch[2] ?? "";
     if (!name || /^(un pokemon|un pokémon|pokemon|pokémon)$/i.test(name)) {
-      return { kind: "action", action: { type: "switch", pokemon: "" }, raw };
+      return { kind: "action", action: { type: "switch", pokemon: "" }, raw, tentative };
     }
     return {
       kind: "action",
       action: { type: "switch", pokemon: aliasSpecies(name) },
       raw,
+      tentative,
     };
   }
 
   if (/^(cambia(?:r)?|cambio|switch)$/i.test(cleaned)) {
-    return { kind: "action", action: { type: "switch", pokemon: "" }, raw };
+    return { kind: "action", action: { type: "switch", pokemon: "" }, raw, tentative };
   }
 
   let movePhrase = cleaned;
@@ -91,8 +100,10 @@ export function parseVoiceCommand(utterance: string, ctx: ParseContext): VoiceIn
         mega,
         dynamax,
         zmove,
+        target: spokenTarget,
       },
       raw,
+      tentative,
     };
   }
 
@@ -103,6 +114,7 @@ export function parseVoiceCommand(utterance: string, ctx: ParseContext): VoiceIn
       kind: "action",
       action: { type: "switch", pokemon: switchGuess.value },
       raw,
+      tentative,
     };
   }
 

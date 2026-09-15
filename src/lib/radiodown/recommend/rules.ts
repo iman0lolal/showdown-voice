@@ -3,17 +3,21 @@ import { activePokemon, opponentPlayer, youPlayer } from "../battle/engine.ts";
 import { guessMoveType, typeEffectiveness } from "./type-chart.ts";
 import { toId } from "../ids.ts";
 
+/**
+ * Data-only suggestion. Never a /choose string. Never a websocket send.
+ * AnalysisEngine must not import the Showdown transport.
+ */
 export interface RuleRecommendation {
+  recommendedAction: BattleAction;
+  /** Alias of recommendedAction — kept so older tests read `.action`. */
   action: BattleAction;
+  confidence: number;
+  reason: string;
   why: string;
   spoken: string;
   score: number;
 }
 
-/**
- * Deterministic layer. Never executes. Never required for the voice loop.
- * Uses revealed info + type chart only — no damage calc, no LLM.
- */
 export function recommend(state: BattleState, lang: "es" | "en" = "es"): RuleRecommendation | null {
   const request = state.request;
   if (!request || request.kind === "wait") return null;
@@ -21,6 +25,23 @@ export function recommend(state: BattleState, lang: "es" | "en" = "es"): RuleRec
     return recommendSwitch(state, request, lang);
   }
   return recommendMove(state, request, lang);
+}
+
+function pack(
+  action: BattleAction,
+  score: number,
+  reason: string,
+): RuleRecommendation {
+  const confidence = Math.max(0.15, Math.min(0.92, score / 2.4));
+  return {
+    recommendedAction: action,
+    action,
+    confidence,
+    reason,
+    why: reason,
+    spoken: reason,
+    score,
+  };
 }
 
 function recommendSwitch(state: BattleState, request: ChoiceRequest, lang: "es" | "en"): RuleRecommendation | null {
@@ -43,7 +64,7 @@ function recommendSwitch(state: BattleState, request: ChoiceRequest, lang: "es" 
     : lang === "en"
       ? `${pick.name} is a legal switch.`
       : `${pick.name} es un cambio legal.`;
-  return { action, why, spoken: why, score: 1 };
+  return pack(action, 1, why);
 }
 
 function recommendMove(state: BattleState, request: ChoiceRequest, lang: "es" | "en"): RuleRecommendation | null {
@@ -75,7 +96,7 @@ function recommendMove(state: BattleState, request: ChoiceRequest, lang: "es" | 
     lang === "en"
       ? effectivenessWhy(best.m.move, best.eff, foe?.species, "en")
       : effectivenessWhy(best.m.move, best.eff, foe?.species, "es");
-  return { action, why, spoken: why, score: best.score };
+  return pack(action, best.score, why);
 }
 
 function effectivenessWhy(move: string, eff: number, species: string | undefined, lang: "es" | "en"): string {

@@ -1,7 +1,9 @@
-import { BattleEngine } from "../battle/engine.ts";
+import { BattleEngine, createBattleState } from "../battle/engine.ts";
 import { parseProtocolPayload } from "../protocol/parse-line.ts";
 import { validateAndChoose } from "../action/choose.ts";
 import { recommend, type RuleRecommendation } from "../recommend/rules.ts";
+import { battlePhaseFromSession, canProposeAction, canSendChoose } from "../lifecycle.ts";
+import type { ConnectionPhase } from "../lifecycle.ts";
 import type {
   BattleAction,
   BattleState,
@@ -14,8 +16,11 @@ import { actionSpeech, narrateOpponent, narrateOptions, narrateSituation } from 
 
 export interface SessionConfig {
   lang: "es" | "en";
-  /** Always confirm irreversible actions. Default true. */
-  requireConfirm: boolean;
+  /**
+   * Security invariant. Always true in production.
+   * There is no "auto battle" switch.
+   */
+  readonly requireConfirm: true;
   confirmTimeoutMs: number;
 }
 
@@ -33,23 +38,27 @@ export interface SessionReply {
 
 /**
  * Turn conversation controller.
- * Never auto-executes a recommendation. Ambiguous STT never clicks.
+ * Recommendations never execute. Ambiguous STT never clicks.
+ * /choose is emitted only from ACTION_PENDING_CONFIRMATION after "sí".
  */
 export class VoiceSession {
   readonly engine: BattleEngine;
   config: SessionConfig;
   phase: SessionPhase = "idle";
+  connectionPhase: ConnectionPhase = "DISCONNECTED";
   lastNarration = "";
   lastHeard?: string;
   pending?: PendingConfirmation;
   recommendation?: RuleRecommendation;
   clarification?: string;
   error?: string;
+  lastSentRqid?: number;
+  lastSentChoose?: string;
   onExecute?: (choose: string) => void;
 
-  constructor(engine?: BattleEngine, config?: Partial<SessionConfig>) {
+  constructor(engine?: BattleEngine, config?: Partial<Pick<SessionConfig, "lang" | "confirmTimeoutMs">>) {
     this.engine = engine ?? new BattleEngine();
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.config = { ...DEFAULT_CONFIG, ...config, requireConfirm: true };
   }
 
   get state(): BattleState {
@@ -61,15 +70,40 @@ export class VoiceSession {
     for (const chunk of chunks) this.engine.feed(chunk.events, chunk.roomId);
     if (this.state.ended) {
       this.phase = "ended";
+      this.pending = undefined;
       return this.speakNow(narrateSituation(this.state, this.config.lang));
     }
     if (this.state.request && this.state.request.kind !== "wait") {
+      if (this.state.request.rqid != null && this.state.request.rqid === this.lastSentRqid) {
+        this.phase = "waiting_result";
+        return null;
+      }
       this.recommendation = recommend(this.state, this.config.lang) ?? undefined;
       this.phase = "awaiting_command";
       this.pending = undefined;
       return this.speakNow(narrateSituation(this.state, this.config.lang));
     }
+    if (this.state.request?.kind === "wait") {
+      this.phase = "waiting_result";
+    }
     return null;
+  }
+
+  /**
+   * After a socket drop: reset engine and replay the protocol log.
+   * Showdown re-sends the battle log + current |request| on `/join ROOM`.
+   */
+  restoreFromLog(payload: string): SessionReply | null {
+    const roomId = this.state.roomId;
+    const lang = this.config.lang;
+    this.engine.state = createBattleState();
+    if (roomId) this.engine.state.roomId = roomId;
+    this.pending = undefined;
+    this.lastSentChoose = undefined;
+    this.lastSentRqid = undefined;
+    this.phase = "idle";
+    this.config = { ...this.config, lang, requireConfirm: true };
+    return this.ingest(payload);
   }
 
   hear(utterance: string): SessionReply {
@@ -97,7 +131,8 @@ export class VoiceSession {
     }
     if (intent.kind === "cancel" || intent.kind === "deny") {
       this.pending = undefined;
-      this.phase = "awaiting_command";
+      if (this.state.ended) this.phase = "ended";
+      else if (this.state.request && this.state.request.kind !== "wait") this.phase = "awaiting_command";
       const msg = this.config.lang === "en" ? "Cancelled. What do you want to do?" : "Cancelado. ¿Qué quieres hacer?";
       return this.speakNow(msg);
     }
@@ -133,16 +168,31 @@ export class VoiceSession {
   }
 
   confirmPending(): SessionReply {
-    if (!this.pending) {
+    const gate = canSendChoose({
+      connection: this.connectionPhase === "DISCONNECTED" ? undefined : this.connectionPhase,
+      battle: battlePhaseFromSession(this.phase, this.state.ended, Boolean(this.state.request)),
+      ended: this.state.ended,
+      hasLiveRequest: Boolean(this.state.request && this.state.request.kind !== "wait"),
+      lastSentRqid: this.lastSentRqid,
+      currentRqid: this.state.request?.rqid,
+    });
+    if (!this.pending || !gate.ok) {
       const msg =
-        this.config.lang === "en"
-          ? "Nothing to confirm. Tell me a move or a switch."
-          : "No hay nada que confirmar. Dime un movimiento o un cambio.";
+        !this.pending
+          ? this.config.lang === "en"
+            ? "Nothing to confirm. Tell me a move or a switch."
+            : "No hay nada que confirmar. Dime un movimiento o un cambio."
+          : gate.ok
+            ? ""
+            : gate.reason;
       return this.speakNow(msg);
     }
     const choose = this.pending.choose;
+    const rqid = this.state.request?.rqid;
     this.pending = undefined;
     this.phase = "executing";
+    this.lastSentChoose = choose;
+    this.lastSentRqid = rqid;
     this.onExecute?.(choose);
     const speak = this.config.lang === "en" ? "Executing." : "Ejecutando.";
     const reply = this.speakNow(speak, choose);
@@ -161,17 +211,33 @@ export class VoiceSession {
       recommendation: this.recommendation
         ? {
             action: this.recommendation.action,
-            why: this.recommendation.why,
+            why: this.recommendation.reason,
             spoken: this.recommendation.spoken,
+            confidence: this.recommendation.confidence,
           }
         : undefined,
       clarification: this.clarification,
       error: this.error,
+      lastSentRqid: this.lastSentRqid,
     };
   }
 
   private propose(action: BattleAction, source: "user" | "recommendation"): SessionReply {
-    const check = validateAndChoose(action, this.state.request);
+    const proposeGate = canProposeAction({
+      battle: battlePhaseFromSession(this.phase, this.state.ended, Boolean(this.state.request)),
+      ended: this.state.ended,
+      hasLiveRequest: Boolean(this.state.request && this.state.request.kind !== "wait"),
+    });
+    if (!proposeGate.ok) {
+      this.error = proposeGate.reason;
+      return this.speakNow(proposeGate.reason);
+    }
+    const check = validateAndChoose(action, this.state.request, {
+      ended: this.state.ended,
+      gameType: this.state.gameType,
+      lastSentRqid: this.lastSentRqid,
+      perspective: this.state.perspective,
+    });
     if (!check.ok || !check.action || !check.choose) {
       this.phase = "clarifying";
       const msg = check.needsClarification ?? check.reason ?? "No puedo ejecutar eso.";
@@ -180,10 +246,6 @@ export class VoiceSession {
       return this.speakNow(msg);
     }
     const spoken = actionSpeech(check.action, this.config.lang);
-    if (!this.config.requireConfirm) {
-      this.pending = { action: check.action, choose: check.choose, spoken, source };
-      return this.confirmPending();
-    }
     this.pending = { action: check.action, choose: check.choose, spoken, source };
     this.phase = "confirming";
     const ask = this.config.lang === "en" ? `${spoken} Confirm?` : `${spoken} ¿Confirmas?`;

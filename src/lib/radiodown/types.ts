@@ -1,4 +1,7 @@
 import type { PlayerId, SlotLetter } from "./ids.ts";
+import type { ActionTarget } from "./action/targets.ts";
+
+export type { ActionTarget };
 
 export type StatusId = "brn" | "par" | "slp" | "frz" | "psn" | "tox" | "fnt";
 
@@ -20,6 +23,8 @@ export interface KnownMove {
   maxPp?: number;
   disabled?: boolean;
   target?: string;
+  /** Only true when the opponent actually used it, or |request| listed it for us. */
+  revealed: boolean;
 }
 
 export interface StatBoosts {
@@ -43,7 +48,6 @@ export const EMPTY_BOOSTS: StatBoosts = {
 };
 
 export interface PokemonState {
-  /** Stable key: player + slot-or-species. */
   key: string;
   player: PlayerId;
   slot?: SlotLetter;
@@ -53,6 +57,7 @@ export interface PokemonState {
   gender?: "M" | "F";
   shiny: boolean;
   teraType?: string;
+  teraTypeKnown: boolean;
   terastallized: boolean;
   hp: HpState;
   status?: StatusId;
@@ -60,11 +65,13 @@ export interface PokemonState {
   itemKnown: boolean;
   ability?: string;
   abilityKnown: boolean;
+  /** Revealed / request-listed moves only. Never a smogon analysis guess. */
   moves: KnownMove[];
   boosts: StatBoosts;
   fainted: boolean;
   active: boolean;
   volatiles: string[];
+  /** Only set from |request| (our team) or a revealed type-changing event. */
   types?: string[];
 }
 
@@ -152,25 +159,38 @@ export interface ChoiceRequest {
   noCancel?: boolean;
 }
 
+export type MoveAction = {
+  type: "move";
+  move: string;
+  moveId: string;
+  /** 0-based index into request.active (doubles). Default 0. */
+  activeSlot?: number;
+  slot?: number;
+  mega?: boolean;
+  megax?: boolean;
+  megay?: boolean;
+  zmove?: boolean;
+  dynamax?: boolean;
+  terastallize?: boolean;
+  target?: ActionTarget;
+};
+
+export type SwitchAction = { type: "switch"; pokemon: string; slot?: number; activeSlot?: number };
+
 export type BattleAction =
-  | {
-      type: "move";
-      move: string;
-      moveId: string;
-      slot?: number;
-      mega?: boolean;
-      megax?: boolean;
-      megay?: boolean;
-      zmove?: boolean;
-      dynamax?: boolean;
-      terastallize?: boolean;
-      target?: string;
-    }
-  | { type: "switch"; pokemon: string; slot?: number }
+  | MoveAction
+  | SwitchAction
   | { type: "team"; order: string }
   | { type: "pass" }
   | { type: "undo" }
   | { type: "default" };
+
+export interface ValidationContext {
+  ended?: boolean;
+  gameType?: GameType;
+  lastSentRqid?: number;
+  perspective?: PlayerId | null;
+}
 
 export interface ValidationResult {
   ok: boolean;
@@ -203,7 +223,6 @@ export interface BattleState {
   p2: SideState;
   field: FieldState;
   request: ChoiceRequest | null;
-  /** Whose private info we have (`side.id` from the latest request). */
   perspective: PlayerId | null;
   log: BattleEvent[];
   lastTurnSummary: string[];
@@ -211,7 +230,7 @@ export interface BattleState {
 
 export type VoiceIntent =
   | { kind: "query"; topic: "opponent" | "options" | "moves" | "team" | "situation" | "recommend" }
-  | { kind: "action"; action: BattleAction; raw: string }
+  | { kind: "action"; action: BattleAction; raw: string; tentative?: boolean }
   | { kind: "confirm" }
   | { kind: "deny" }
   | { kind: "cancel" }
@@ -242,7 +261,8 @@ export interface VoiceSessionSnapshot {
   lastNarration: string;
   lastHeard?: string;
   pending?: PendingConfirmation;
-  recommendation?: { action: BattleAction; why: string; spoken: string };
+  recommendation?: { action: BattleAction; why: string; spoken: string; confidence: number };
   clarification?: string;
   error?: string;
+  lastSentRqid?: number;
 }
