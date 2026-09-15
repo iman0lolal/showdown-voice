@@ -17,7 +17,7 @@ Esto es viable **como cliente del protocolo público de Showdown**, no como auto
 - Un iPhone **no** puede controlar la PWA oficial con la pantalla bloqueada.
 - Android sí puede mantener micrófono + websocket en un Foreground Service nativo. Eso es Fase 5, no este núcleo TypeScript.
 
-Detalles: [`docs/PROTOCOL.md`](docs/PROTOCOL.md), [`docs/ANDROID.md`](docs/ANDROID.md), [`docs/IOS.md`](docs/IOS.md), [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Detalles: [`docs/RESEARCH.md`](docs/RESEARCH.md), [`docs/PROTOCOL.md`](docs/PROTOCOL.md), [`docs/ANDROID.md`](docs/ANDROID.md), [`docs/IOS.md`](docs/IOS.md), [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Núcleo
 
