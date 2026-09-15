@@ -1,15 +1,23 @@
 # Roadmap
 
-- [x] Fase 0 — investigación (Showdown, Android, iOS, ToS)
-- [x] Fase 1 — modelos + parser + estado + tests + fixtures
-- [x] Fase 2 — cliente websocket + login proxy + `/choose`
-- [x] Fase 3 — STT/TTS del navegador + parser de comandos + confirmación
-- [x] Fase 4 — validador de acciones legales
-- [x] Auditoría de núcleo (targets, lifecycle, reconexión, compliance)
-- [ ] Fase 5 — app Android nativa (Foreground Service `microphone`). No APK en este entorno
-- [x] Fase 6 — capa de IA/heurística opcional (no ejecuta)
-- [ ] Fase 7 — partida ladder real en un dispositivo con auriculares
+Plataformas: **iOS primero**. Chrome extension después. **Android cancelado.**
 
-La Fase 5 no se finge. iPhone bloqueado + PWA oficial = no viable. Ver `docs/IOS.md` y `docs/ANDROID.md`.
+La web actual es harness de desarrollo, no el producto.
 
-`requireConfirm` no se relaja. Ver `docs/SHOWDOWN-COMPLIANCE.md`.
+- [x] Fase 0 — investigación Showdown / ToS / protocolo
+- [x] Fase 1 — Battle Core (estado, parser, fixtures, tests)
+- [x] Fase 2 — protocolo Showdown (websocket helpers, login parse, `/choose`, reconexión, `\|updatesearch\|`)
+- [x] Fase 3 — voice engine (parser ES/EN, narrador, sesión)
+- [x] Fase 4 — action + confirmation (`validateAndChoose`, `requireConfirm` fijo)
+- [x] Fase 5 — **iOS feasibility + architecture** (`docs/IOS.md`, `docs/CHROME.md`)
+- [ ] Fase 6 — iOS MVP (SwiftUI, audio, websocket, START VOICE BATTLE → auto-join)
+- [ ] Fase 7 — prueba real: iPhone + Showdown + AirPods + Voice Battle (pantalla bloqueada)
+- [ ] Fase 8 — Chrome extension, solo si iOS funciona
+
+`requireConfirm = true` no se relaja. Ver `docs/SHOWDOWN-COMPLIANCE.md`.
+
+## Fase 5 — resultado
+
+La experiencia soñada es **viable como app nativa que es cliente de Showdown**. No es viable como PWA ni controlando Safari. Auto-join sin escribir Battle ID: misma cuenta con nombre + `|updatesearch|.games`. Detalle y matriz: `docs/IOS.md`.
+
+No se ha escrito código nativo iOS ni la extensión. Eso es Fase 6 / 8.

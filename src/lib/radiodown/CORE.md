@@ -6,24 +6,30 @@ This folder is the Battle Core. It must stay free of:
 - React
 - Web Speech API
 - Node `http` / `ws` constructors
+- UIKit / AVFoundation
 
 ```
 radiodown/
-├── battle-state     → battle/  types.ts
-├── showdown-protocol→ protocol/ showdown/
-├── action-engine    → action/choose.ts action/targets.ts
-├── validation       → action/choose.ts + lifecycle.ts
-├── voice-command-model → voice/
-└── analysis         → recommend/   (data only, never /choose)
+├── battle-state          → battle/  types.ts
+├── showdown-protocol     → protocol/ showdown/
+│                            including |updatesearch| auto-join
+├── action-engine         → action/choose.ts action/targets.ts
+├── validation            → action/choose.ts + lifecycle.ts
+├── voice-command-model   → voice/
+└── analysis              → recommend/   (data only, never /choose)
 ```
 
-App shells:
+App shells (platforms implement mic / STT / TTS / net only):
 
 ```
-                ┌── Web demo (React + Web Speech)
-Battle Core ────┼── Android (Phase 5, not in this tree)
-                └── iOS (later)
+                ┌── iOS app (Swift; TS is the test oracle)
+Battle Core ────┼── Chrome extension (TS direct, Fase 8)
+                └── CLI / web harness (not the product)
 ```
 
-The websocket lives in the shell (`src/lib/showdown-browser.ts` for web).
+Android is cancelled.
+
+The websocket lives in the shell (`src/lib/showdown-browser.ts` for the web harness).
 The core consumes protocol strings and emits `/choose` strings.
+
+`requireConfirm` is not configurable.

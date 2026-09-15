@@ -1,7 +1,7 @@
 /**
  * Explicit app lifecycle. Connection and battle are separate so a demo
- * without a socket can still run the voice loop, and Android can drive
- * the same guards from a Foreground Service.
+ * without a socket can still run the voice loop, and iOS / Chrome can
+ * drive the same guards from their shells.
  *
  * requireConfirm is not a field here: sending /choose is only legal from
  * ACTION_PENDING_CONFIRMATION after an explicit confirm event.
@@ -14,6 +14,7 @@ export type ConnectionPhase =
   | "AUTHENTICATING"
   | "IDLE"
   | "SEARCHING"
+  | "JOINING"
   | "RECONNECTING"
   | "ERROR";
 

@@ -35,7 +35,13 @@ export {
   reconnectCommands,
   isTransportFrame,
   KEEPALIVE_CMD,
+  parseUpdateSearch,
+  battleRoomsFromSearch,
+  planVoiceBattleJoin,
+  joinBattleCommand,
+  isBattleRoomId,
 } from "./showdown/client.ts";
+export type { UpdateSearch, BattleRoomRef, VoiceBattleJoinPlan } from "./showdown/client.ts";
 export {
   canSendChoose,
   canProposeAction,

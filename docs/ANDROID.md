@@ -1,26 +1,9 @@
-# Android (Fase 5)
+# Android — cancelado
 
-Este preview no compila APK. El entorno no tiene Android SDK. La vía nativa, cuando se implemente, es **ser el cliente de Showdown**, no pulsar la web oficial.
+Android **no** es una plataforma objetivo.
 
-## Por qué nativo y no Accessibility
+Se investigó en Fase 0 (Foreground Service `microphone`, etc.). El usuario prioriza iOS personal + extensión de Chrome. No se invierte tiempo aquí salvo una razón excepcional que hoy no existe.
 
-| Enfoque | Pantalla bloqueada | Fiabilidad | Riesgo de “bot de inputs” |
-|---|---|---|---|
-| Cliente websocket propio + Foreground Service | Viable | Alta | Bajo (tú confirmas) |
-| Accessibility Service clicando play.pokemonshowdown.com | Casi nulo con pantalla off | Frágil | Alto |
-| OCR | No | Peor | Alto |
+iOS cubre la pantalla bloqueada por otra vía (`UIBackgroundModes=audio`). Chrome cubre el escritorio. No falta un hueco que solo Android pueda llenar.
 
-## Servicio
-
-Foreground Service con tipos:
-
-- `microphone` (`FOREGROUND_SERVICE_MICROPHONE` + `RECORD_AUDIO`)
-- Conexión persistente del websocket (no uses `dataSync` para una batalla larga en API 35+)
-
-`SpeechRecognizer`, `TextToSpeech`, `MediaSession` para auriculares. El motor TypeScript de `src/lib/radiodown` es el contrato: portarlo a Kotlin o llamarlo vía JS.
-
-## Confirmación
-
-El servicio **no** llama a `/choose` hasta `sí` / `hazlo`. Una recomendación nunca se envía sola.
-
-No modificar [PokeCoachAI](https://github.com/iman0lolal/PokeCoachAI): es otro producto.
+El core TypeScript no tiene imports Android. No hay que borrar nada más.

@@ -4,20 +4,19 @@ Cliente de voz para [Pokémon Showdown](https://pokemonshowdown.com). Tú decide
 
 No es un bot. No juega ladder solo. No hace clic en la web oficial.
 
+**Producto:** app nativa iPhone. **Secundario:** extensión de Chrome. **No:** Android, ni una web como producto. Esta demo web es el harness de desarrollo.
+
 Repositorio: https://github.com/iman0lolal/showdown-voice
 
 [PokeCoachAI](https://github.com/iman0lolal/PokeCoachAI) es **otro** proyecto (Team Preview de Pokémon Champions). Este repo no lo toca.
 
-## Conclusión técnica
+## Conclusión iOS (Fase 5)
 
-Esto es viable **como cliente del protocolo público de Showdown**, no como automatización de la UI oficial.
+La experiencia soñada — Showdown en Safari, START VOICE BATTLE, AirPods, pantalla bloqueada, voz bidireccional — **es viable** si Voice Battle es un **cliente nativo del protocolo**. No es viable como PWA ni controlando Safari.
 
-- El estado de la batalla llega por websocket (`wss://sim3.psim.us/showdown/websocket`). No hay API REST de combates en vivo.
-- Las acciones se envían como `ROOMID|/choose move earthquake` (con `terastallize`, `mega`, `max`, `zmove` si aplica).
-- Un iPhone **no** puede controlar la PWA oficial con la pantalla bloqueada.
-- Android sí puede mantener micrófono + websocket en un Foreground Service nativo. Eso es Fase 5, no este núcleo TypeScript.
+Auto-join sin escribir Battle ID: misma **cuenta con nombre** + `|updatesearch|.games` + `/join`. Un invitado de Safari no se puede detectar.
 
-Detalles: [`docs/RESEARCH.md`](docs/RESEARCH.md), [`docs/PROTOCOL.md`](docs/PROTOCOL.md), [`docs/SHOWDOWN-COMPLIANCE.md`](docs/SHOWDOWN-COMPLIANCE.md), [`docs/AUDIT.md`](docs/AUDIT.md), [`docs/ANDROID.md`](docs/ANDROID.md), [`docs/IOS.md`](docs/IOS.md).
+Matriz honesta: [`docs/IOS.md`](docs/IOS.md). Chrome: [`docs/CHROME.md`](docs/CHROME.md). Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Núcleo
 
@@ -33,7 +32,7 @@ Action Validator  →  /choose …
 Pokémon Showdown
 ```
 
-La IA / heurística es opcional y **nunca ejecuta**.
+La IA / heurística es opcional y **nunca ejecuta**. `requireConfirm` es invariante.
 
 ## Requisitos
 
@@ -47,26 +46,16 @@ npm test
 npm run demo
 ```
 
-No hay `.env`. El login de Showdown (cabina web) usa usuario/contraseña en memoria. No se suben secretos a este repo.
+No hay `.env`. El login de Showdown usa usuario/contraseña en memoria. No se suben secretos a este repo.
 
 ## Estructura
 
 ```
 showdown-voice/
-├── src/lib/radiodown/
-│   ├── CORE.md
-│   ├── lifecycle.ts   # canSendChoose / fases
-│   ├── protocol/
-│   ├── battle/
-│   ├── voice/
-│   ├── action/        # /choose + targets (singles + doubles encoding)
-│   ├── recommend/     # data only, nunca /choose
-│   ├── showdown/      # discovery, keepalive, reconnect helpers
-│   └── fixtures/
+├── src/lib/radiodown/     # Battle Core portable
 ├── examples/demo.ts
-├── docs/              # PROTOCOL, COMPLIANCE, AUDIT, ANDROID, IOS
-├── .github/workflows/test.yml
-└── package.json
+├── docs/                  # IOS, CHROME, PROTOCOL, COMPLIANCE, AUDIT
+└── .github/workflows/test.yml
 ```
 
 ## Tests
@@ -75,27 +64,18 @@ showdown-voice/
 npm test
 ```
 
-47 tests. Un movimiento ilegal no produce `/choose`. “Terremoto” no se envía hasta “sí”.
+Un movimiento ilegal no produce `/choose`. “Terremoto” no se envía hasta “sí”.
 
 ## ToS / bots
 
-Showdown permite clientes no oficiales. Un **bot que decide y juega ladder solo** es otra cosa y puede acabar en sanción.
+Showdown permite clientes no oficiales. Un **bot que decide y juega ladder solo** es otra cosa.
 
 | Uso | ¿Aceptable aquí? |
 |---|---|
 | Cliente de voz: tú eliges, él envía `/choose` | Sí, por diseño |
 | Lector de estado + recomendación | Sí, no ejecuta |
-| Accessibility / OCR sobre la web oficial | No (frágil y huele a bot de inputs) |
+| Accessibility / OCR sobre la web oficial | No |
 | Jugar ladder sin confirmación humana | No. `requireConfirm` es obligatorio |
-
-## Probar una partida real (honesto)
-
-1. Abre la cabina web (preview de este proyecto) o clona y corre `npm run demo`.
-2. En **En vivo**: Conectar → Login / Invitado → Buscar Random Battle.
-3. Cuando narre el turno, di o escribe el movimiento (`Terremoto`, `usa Protect`, `cambio a Gholdengo`).
-4. Confirma con `sí`. Solo entonces se envía `/choose`.
-5. En iPhone: deja la pantalla encendida. El bloqueo mata STT en Safari.
-6. No uses esto para jugar ladder automáticamente.
 
 ## Licencia
 

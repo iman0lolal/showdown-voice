@@ -34,6 +34,22 @@ PROTOCOL.md también documenta `ws://sim3.psim.us:8000/showdown/websocket`.
 4. Respuesta `]` + JSON → `/trn USERNAME,0,ASSERTION`
 5. Sesión: GET `api/upkeep?challstr=`
 
+Un `User` puede tener varias `Connection` (Safari + app nativa). Tras `/trn`, el servidor fusiona la conexión en ese usuario.
+
+## `|updatesearch|` — batallas activas (auto-join)
+
+```
+|updatesearch|{"searching":["gen9randombattle"],"games":{"battle-gen9randombattle-123":"A vs. B"}}
+```
+
+- `searching`: formatos en cola.
+- `games`: `{roomid: title}` o `null`. Incluye Mafia y otros; filtrar `battle-*`.
+- Llega al login y cada vez que cambia una búsqueda o una partida.
+
+START VOICE BATTLE: `/trn` → leer `games` → `/join battle-…`. No hace falta que Safari nos avise. Invitados de Safari ≠ invitados de la app: hace falta cuenta con nombre.
+
+Core: `parseUpdateSearch`, `planVoiceBattleJoin`.
+
 ## Reconexión
 
 El protocolo no tiene un frame “resume”. El cliente oficial abre un socket nuevo, espera `|challstr|`, vuelve a `/trn` y `/join battle-…`. El servidor reenvía el log de la sala y el `|request|` actual. Radiodown: `reconnectCommands` + `VoiceSession.restoreFromLog`.

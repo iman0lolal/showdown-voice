@@ -1,16 +1,17 @@
 # Auditoría del núcleo (2026-09-15)
 
-No se ha empezado Android. Objetivo: core portable y seguro.
+Android cancelado. iOS es la plataforma. Objetivo: core portable y seguro.
 
 ## A. Estado
 
 | Área | Veredicto |
 |---|---|
-| Core | **READY** (con límites de singles documentados) |
-| Showdown integration | **READY** para Random Battle singles; servidor descubrible |
-| Voice | **READY** (STT/TTS son del shell web, no del core) |
+| Core | **READY** (singles documentados) |
+| Showdown integration | **READY** Random Battle + auto-join vía `\|updatesearch\|` |
+| Voice | **READY** (STT/TTS son del shell, no del core) |
 | Action execution | **READY** (`/choose` solo tras confirmación + `|request|`) |
-| Mobile architecture | **READY** para portar: el core no usa DOM/React/Web Speech |
+| iOS architecture | **DOCUMENTED** (`docs/IOS.md`). Sin código nativo aún |
+| Chrome extension | **DOCUMENTED** (`docs/CHROME.md`). Fase 8 |
 
 ## B. Problemas que había (y qué se hizo)
 
@@ -25,6 +26,7 @@ No se ha empezado Android. Objetivo: core portable y seguro.
 9. `KnownMove` no marcaba *revealed*. **Campo `revealed`.** El analysis no escribe en el estado.
 10. Máquina de estados implícita. **`lifecycle.ts` + `canSendChoose`.**
 11. Recomendación era casi una acción. **Objeto de datos + `confidence`; nunca `choose`.**
+12. Auto-join de batalla activa. **`parseUpdateSearch` + `planVoiceBattleJoin`.**
 
 ## C. Límites que quedan (no bugs)
 
@@ -33,12 +35,13 @@ No se ha empezado Android. Objetivo: core portable y seguro.
 - EVs/IVs/naturaleza del rival no existen en el protocolo público; no se inventan.
 - Ping de aplicación: `|/cmd ping`. El ping WebSocket lo hace el runtime.
 - El login HTTP sigue en el shell (hace falta `fetch`). El core solo parsea la respuesta.
+- Invitado de Safari ≠ invitado de Radiodown. Auto-join exige cuenta con nombre.
 - Typecheck/lint/build del monorepo App Builder incluyen código de plataforma; el contrato de CI del repo GitHub es `npm test` del core.
 
 ## D. Tests
 
-Ver el mensaje de la auditoría / `npm test`.
+`src/lib/radiodown/**/*.test.ts` (incluye `showdown/search.test.ts`).
 
-## E. Fase 5
+## E. Fase 5 / 6
 
-El core se puede incrustar en Android (JS engine o port Kotlin del mismo contrato). No implementado aquí.
+Fase 5 (este documento + `IOS.md`) **no** compila Xcode. Fase 6 es el MVP iOS, cuando el usuario confirme el veredicto.
